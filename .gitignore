@@ -218,3 +218,8 @@ __marimo__/
 data/images_normalized/
 models/sae_baseline_run/
 models/sae_runs/
+
+openaikey.txt
+
+.DS_Store
+*/.DS_Store

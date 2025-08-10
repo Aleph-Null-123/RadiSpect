@@ -110,3 +110,18 @@ class SAEWrapper:
         delta = _normalize01(delta)[0,0]           # (H,W) in [0,1]
         return delta, x_cpu
 
+
+@torch.no_grad()
+def delta_for_scale(wrapper, x, j: int, scale: float):
+    """
+    Heatmap when scaling latent j by 'scale' relative to baseline:
+      scale=0.0 -> ablation; 1.0 -> baseline; >1.0 -> amplification.
+    Returns normalized |x̂(scale) - x̂(1.0)|.
+    """
+    x = x.to(wrapper.device)
+    xhat, z = wrapper.model(x)
+    z2 = z.clone(); z2[:, j] = z[:, j] * scale
+    xhat2 = wrapper.model.decode(z2)
+    d = (xhat2 - xhat).abs().cpu()[0,0]
+    mn, mx = d.min(), d.max()
+    return (d - mn) / (mx - mn + 1e-8)

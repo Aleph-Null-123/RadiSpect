@@ -1,0 +1,72 @@
+{
+  "13": {
+    "label": "atelectasis",
+    "support": 8,
+    "pos": 8,
+    "neg": 0,
+    "enrichment": 0.04249863611565739
+  },
+  "103": {
+    "label": "pneumonia",
+    "support": 5,
+    "pos": 5,
+    "neg": 1,
+    "enrichment": 0.0506001091107474
+  },
+  "133": {
+    "label": "atelectasis",
+    "support": 8,
+    "pos": 8,
+    "neg": 0,
+    "enrichment": 0.04249863611565739
+  },
+  "158": {
+    "label": "granuloma",
+    "support": 5,
+    "pos": 5,
+    "neg": 0,
+    "enrichment": 0.031232951445717395
+  },
+  "227": {
+    "label": "atelectasis",
+    "support": 10,
+    "pos": 10,
+    "neg": 0,
+    "enrichment": 0.07583196944899072
+  },
+  "245": {
+    "label": "granuloma",
+    "support": 6,
+    "pos": 6,
+    "neg": 0,
+    "enrichment": 0.04789961811238407
+  },
+  "254": {
+    "label": "atelectasis",
+    "support": 11,
+    "pos": 11,
+    "neg": 0,
+    "enrichment": 0.09249863611565738
+  },
+  "270": {
+    "label": "granuloma",
+    "support": 5,
+    "pos": 5,
+    "neg": 0,
+    "enrichment": 0.031232951445717395
+  },
+  "327": {
+    "label": "atelectasis",
+    "support": 7,
+    "pos": 7,
+    "neg": 0,
+    "enrichment": 0.02583196944899073
+  },
+  "332": {
+    "label": "pneumonia",
+    "support": 5,
+    "pos": 5,
+    "neg": 1,
+    "enrichment": 0.0506001091107474
+  }
+}

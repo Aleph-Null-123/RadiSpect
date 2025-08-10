@@ -1,25 +1,29 @@
 import re, json
 from pathlib import Path
-from collections import Counter, defaultdict
+from collections import Counter
 import numpy as np, pandas as pd
 
-# --- tiny clinical vocab (you can edit) ---
 VOCAB = {
-  "pleural effusion": ["pleural effusion","effusion"],
+  # core findings
+  "pleural effusion": ["pleural effusion"],
   "pneumothorax": ["pneumothorax","ptx"],
-  "cardiomegaly": ["cardiomegaly","enlarged heart","enlarged cardiac"],
-  "consolidation": ["consolidation","airspace opacity","alveolar opacity"],
-  "atelectasis": ["atelectasis","collapse"],
-  "pulmonary edema": ["pulmonary edema","interstitial edema","edema"],
+  "cardiomegaly": ["cardiomegaly","enlarged heart","enlarged cardiac silhouette","enlarged cardiomediastinal silhouette"],
+  "consolidation": ["consolidation","airspace opacity","air space opacity","airspace disease","air space disease","alveolar opacity","lobar consolidation"],
+  "atelectasis": ["atelectasis","atelectatic","volume loss"],
+  "pulmonary edema": ["pulmonary edema","interstitial edema","vascular congestion"],
   "pneumonia": ["pneumonia"],
-  "lines/tubes": ["line","lines","tube","tubes","catheter","et tube","endotracheal","ng tube","enteric"],
-  "cardiac device": ["pacemaker","pacer","icd","leads","cardiac device","defibrillator"],
+  "granuloma": ["granuloma","calcified granuloma"],
+  "nodule/mass": ["pulmonary nodule","nodule","mass"],
+  "emphysema/hyperinflation": ["emphysema","hyperinflation"],
+  "hiatal hernia": ["hiatal hernia"],
   "fracture": ["fracture"],
-  "emphysema": ["emphysema","hyperinflation"],
-  "nodule/mass": ["nodule","mass"],
-  "pleural thickening": ["pleural thickening","pleural disease"],
-  "normal": ["no acute","unremarkable","normal study"]
+
+  "lines/tubes": ["endotracheal tube","tracheostomy","chest tube","picc","port","mediport","enteric tube","ng tube","feeding tube","catheter","central venous catheter","internal jugular","subclavian"],
+  "sternotomy/cabg": ["sternotomy","median sternotomy","cabg"],
 }
+
+NEG_TRIGGERS = [r"\bno\b", r"\bwithout\b", r"\babsent\b", r"\bfree of\b", r"\bnegative for\b", r"\bruled out\b"]
+PSEUDO_NEG = [r"\bno (?:significant )?change\b", r"\bunchanged\b", r"\bstable\b"]
 
 def _norm(s:str)->str:
     s = s.lower()
@@ -27,53 +31,124 @@ def _norm(s:str)->str:
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
-def _contains_any(text:str, terms:list[str])->bool:
+def _pos_neg_mention(text:str, phrase:str, window_tokens:int=6):
+    """
+    Count positive/negative hits of `phrase` in `text`.
+    A hit is NEG if a negation trigger appears within `window_tokens` tokens before phrase,
+    unless a pseudo-negation is closer.
+    Returns (pos_count, neg_count) for that phrase.
+    """
     t = _norm(text)
-    for q in terms:
-        if q in t:
-            return True
-    return False
+    if phrase not in t: return (0,0)
+
+    toks = t.split()
+    ptoks = phrase.split()
+    L = len(ptoks)
+    pos = neg = 0
+    for i in range(len(toks)-L+1):
+        if toks[i:i+L] == ptoks:
+            start = max(0, i-window_tokens)
+            ctx = " ".join(toks[start:i+L])
+            pseudo = any(re.search(p, ctx) for p in PSEUDO_NEG)
+            has_neg = any(re.search(n, ctx) for n in NEG_TRIGGERS)
+            if has_neg and not pseudo:
+                neg += 1
+            else:
+                pos += 1
+    return (pos, neg)
+
+def _background_rate(pairs:pd.DataFrame, vocab:dict):
+    """
+    For each label, compute how often ANY positive mention appears across all reports.
+    Used for enrichment scoring to avoid generic boilerplate winning.
+    """
+    rates = {}
+    texts = pairs["report"].astype(str).tolist()
+    N = len(texts)
+    for label, phrases in vocab.items():
+        pos_any = 0
+        for s in texts:
+            hit = False
+            for ph in phrases:
+                p, n = _pos_neg_mention(s, ph)
+                if p > 0:
+                    hit = True; break
+            if hit: pos_any += 1
+        rates[label] = pos_any / max(1, N)
+    return rates
 
 def mine_labels(pairs_csv:str, z_npy:str, paths_csv:str,
                 topK:int=50, min_support:int=8,
+                min_enrichment:float=0.05, min_pos_ratio:float=0.6,
                 out_json:str="models/latent_labels.json"):
     """
     For each latent j:
-      - take topK images by z[:,j]
-      - count vocabulary matches in their reports
-      - assign the highest-support label if support >= min_support
-    Saves { "<j>": {"label": str, "support": int} } to out_json
+      1) Take topK images by activation z[:,j].
+      2) For each candidate label: count positive vs negated mentions across those reports.
+      3) Score = enrichment = (pos/topK) - background_rate[label].
+      4) Keep the best label if all gates pass:
+         - pos >= min_support
+         - pos/(pos+neg) >= min_pos_ratio
+         - enrichment >= min_enrichment
+    Save: { "<j>": {"label": str, "support": int, "pos": int, "neg": int, "enrichment": float} }
     """
-    pairs = pd.read_csv(pairs_csv)  # must have columns: image, report
+    pairs = pd.read_csv(pairs_csv)  # columns: image, report
     if "image" not in pairs or "report" not in pairs:
         raise ValueError("pairs.csv must have columns: image, report")
 
-    # load run activations aligned with paths
     z = np.load(z_npy)               # (N, m)
     paths = pd.read_csv(paths_csv)["image"].tolist()
     if z.shape[0] != len(paths):
         raise ValueError(f"z_npy rows ({z.shape[0]}) != paths ({len(paths)})")
 
-    # build image->report map
     img2rep = dict(zip(pairs["image"], pairs["report"]))
     reps = [img2rep.get(p, "") for p in paths]
 
+    bg = _background_rate(pairs, VOCAB)
     m = z.shape[1]
     out = {}
     for j in range(m):
         order = np.argsort(-z[:, j])
-        picked_idx = [i for i in order[:topK] if 0 <= i < len(reps)]
-        picked_reports = [reps[i] for i in picked_idx]
+        picked = [i for i in order[:topK] if 0 <= i < len(reps)]
+        if not picked: continue
 
-        # score vocab
-        best_label, best_count = None, 0
-        for label, terms in VOCAB.items():
-            c = sum(1 for r in picked_reports if _contains_any(r, terms))
-            if c > best_count:
-                best_label, best_count = label, c
+        best_label, best_score, best_stats = None, -1e9, None
 
-        if best_label is not None and best_count >= min_support:
-            out[str(j)] = {"label": best_label, "support": int(best_count)}
+        for label, phrases in VOCAB.items():
+            pos = neg = 0
+            for i in picked:
+                r = reps[i]
+                pos_hit = neg_hit = 0
+                for ph in phrases:
+                    p, n = _pos_neg_mention(r, ph)
+                    pos_hit += p; neg_hit += n
+                # one vote per report per label:
+                if pos_hit > 0 and not (neg_hit > 0 and pos_hit == 0):
+                    pos += 1
+                elif pos_hit == 0 and neg_hit > 0:
+                    neg += 1
+
+            total = pos + neg
+            if total == 0: 
+                continue
+            pos_ratio = pos / max(1, total)
+            enrich = (pos / len(picked)) - bg.get(label, 0.0)
+
+            if pos >= min_support and pos_ratio >= min_pos_ratio and enrich >= min_enrichment:
+                score = enrich
+                if score > best_score:
+                    best_score = score
+                    best_label = label
+                    best_stats = dict(pos=pos, neg=neg, enrichment=float(enrich))
+
+        if best_label is not None:
+            out[str(j)] = {
+                "label": best_label,
+                "support": int(best_stats["pos"]),
+                "pos": int(best_stats["pos"]),
+                "neg": int(best_stats["neg"]),
+                "enrichment": best_stats["enrichment"]
+            }
 
     Path(out_json).parent.mkdir(parents=True, exist_ok=True)
     with open(out_json, "w") as f:
@@ -81,24 +156,18 @@ def mine_labels(pairs_csv:str, z_npy:str, paths_csv:str,
     print(f"Wrote {len(out)} labels to {out_json}")
 
 if __name__ == "__main__":
-    # simple CLI: auto-pick a run under models/sae_final if not specified
-    import argparse, sys
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs", default="data/pairs.csv")
-    ap.add_argument("--run", default=None, help="Path to a run dir containing z_val.npy and paths_val.csv")
+    ap.add_argument("--run", required=True, help="Path to a run dir containing z_val.npy and paths_val.csv")
     ap.add_argument("--topK", type=int, default=50)
     ap.add_argument("--min_support", type=int, default=8)
+    ap.add_argument("--min_enrichment", type=float, default=0.05)
+    ap.add_argument("--min_pos_ratio", type=float, default=0.6)
     ap.add_argument("--out", default="models/latent_labels.json")
     args = ap.parse_args()
 
-    run_dir = args.run
-    if run_dir is None:
-        root = Path("models/sae_final")
-        runs = [p for p in root.iterdir() if p.is_dir()]
-        if not runs:
-            sys.exit("No runs under models/sae_final/. Provide --run.")
-        run_dir = str(runs[0])
-        print("Auto-selected run:", run_dir)
-
-    mine_labels(args.pairs, f"{run_dir}/z_val.npy", f"{run_dir}/paths_val.csv",
-                topK=args.topK, min_support=args.min_support, out_json=args.out)
+    mine_labels(args.pairs, f"{args.run}/z_val.npy", f"{args.run}/paths_val.csv",
+                topK=args.topK, min_support=args.min_support,
+                min_enrichment=args.min_enrichment, min_pos_ratio=args.min_pos_ratio,
+                out_json=args.out)
