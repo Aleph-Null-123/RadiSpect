@@ -215,5 +215,6 @@ __marimo__/
 
 .virtual_documents 
 
-data/
-models/
+data/images_normalized/
+models/sae_baseline_run/
+models/sae_runs/

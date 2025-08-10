@@ -1,0 +1,14 @@
+{
+  "seed": 42,
+  "img_size": 224,
+  "train_size": 1000,
+  "val_size": 200,
+  "epochs": 12,
+  "min_epochs": 4,
+  "patience": 2,
+  "batch_size": 8,
+  "active_thresh": 0.001,
+  "latent_dim": 384,
+  "lamb": 0.0005,
+  "lr": 0.001
+}
