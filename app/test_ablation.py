@@ -43,7 +43,7 @@ def main():
     w = SAEWrapper(run_dir)
 
     df = pd.read_csv(PAIRS)
-    # test three images (start, middle, end)
+
     idxs = [0, max(0, len(df)//2 - 1), len(df)-1][:3]
 
     for i in idxs:

@@ -1,0 +1,33 @@
+{
+  "image": "data/images_normalized/439_IM-2078-1001.dcm.png",
+  "findings": [
+    {
+      "latent": 245,
+      "label": "granuloma",
+      "z": 2.037623167037964,
+      "Ebest": null,
+      "mono": 0.9045266897222256,
+      "source": "clickable",
+      "mentioned_in_report": true
+    },
+    {
+      "latent": 13,
+      "label": "atelectasis",
+      "z": 2.0338854789733887,
+      "Ebest": null,
+      "mono": null,
+      "source": "candidate",
+      "mentioned_in_report": false
+    },
+    {
+      "latent": 227,
+      "label": "atelectasis",
+      "z": 1.9119246006011963,
+      "Ebest": null,
+      "mono": null,
+      "source": "candidate",
+      "mentioned_in_report": false
+    }
+  ],
+  "note": "Each finding corresponds 1:1 to a latent with a visible mask."
+}

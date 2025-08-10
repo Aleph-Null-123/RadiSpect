@@ -1,0 +1,9 @@
+in_image:
+- 439_IM-2078-1001.dcm.png (gran, false atel)
+- 455_IM-2086-4004.dcm.png (atel)
+- 1034_IM-0028-1001.dcm.png (risky--- granuloma identified but I'm 90% sure the report actually missed the pneumonia that my model detected)
+
+clinician_view:
+- 165_IM-0427-1001.dcm.png (gran, false atel)
+- 455_IM-2086-4004.dcm.png (atel)
+- 903_IM-2409-1001.dcm.png (gran)

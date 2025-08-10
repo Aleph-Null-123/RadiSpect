@@ -1,0 +1,14 @@
+{
+  "image": "data/images_normalized/27_IM-1168-2002.dcm.png",
+  "findings": [
+    {
+      "latent": 245,
+      "label": "granuloma",
+      "z": 2.830273151397705,
+      "Ebest": null,
+      "mono": 0.9964533610065918,
+      "mentioned_in_report": true
+    }
+  ],
+  "note": "Each finding corresponds 1:1 to a latent with a visible mask."
+}

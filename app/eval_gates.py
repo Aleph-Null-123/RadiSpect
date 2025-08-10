@@ -23,7 +23,6 @@ def main():
     df = pd.read_csv(args.pairs)[["image","report"]]
     paths = df["image"].tolist()
 
-    # labels (optional)
     labels_map = {}
     lj = Path(args.labels_json)
     if lj.exists():
@@ -48,7 +47,6 @@ def main():
         _, z = w.reconstruct(x)
         idx, vals = topk_latents_by_activation(z, k=args.k)
 
-        # optionally keep only labeled latents
         items = []
         for j, v in zip(idx, vals):
             has_label = (str(int(j)) in labels_map)

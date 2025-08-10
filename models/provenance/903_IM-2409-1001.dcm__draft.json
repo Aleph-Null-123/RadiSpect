@@ -1,0 +1,33 @@
+{
+  "image": "data/images_normalized/903_IM-2409-1001.dcm.png",
+  "findings": [
+    {
+      "latent": 245,
+      "label": "granuloma",
+      "z": 2.5889687538146973,
+      "Ebest": null,
+      "mono": 0.9024118857992736,
+      "source": "clickable",
+      "mentioned_in_report": false
+    },
+    {
+      "latent": 103,
+      "label": "pneumonia",
+      "z": 1.9278862476348877,
+      "Ebest": null,
+      "mono": null,
+      "source": "candidate",
+      "mentioned_in_report": true
+    },
+    {
+      "latent": 270,
+      "label": "granuloma",
+      "z": 1.8318874835968018,
+      "Ebest": null,
+      "mono": null,
+      "source": "candidate",
+      "mentioned_in_report": false
+    }
+  ],
+  "note": "Each finding corresponds 1:1 to a latent with a visible mask."
+}

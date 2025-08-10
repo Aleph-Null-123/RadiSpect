@@ -1,0 +1,5 @@
+{
+  "image": "data/images_normalized/643_IM-2222-1001.dcm.png",
+  "findings": [],
+  "note": "Each finding corresponds 1:1 to a latent with a visible mask."
+}

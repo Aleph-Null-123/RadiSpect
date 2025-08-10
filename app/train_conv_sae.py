@@ -135,11 +135,9 @@ def train_one(cfg, df_pairs, runs_dir, save_epoch="best_mse"):
         chosen_metrics={"val_mse":best_val if best_epoch>0 else log[-1]["val_mse"],
                         "mean_active":best_active if best_epoch>0 else log[-1]["mean_active"]}
 
-    # persist single artifact set for this run
     torch.save(model_state, run_dir/"model.pt")
     save_json({"epoch":chosen_epoch, **chosen_metrics}, run_dir/"summary.json")
 
-    # export latents (with chosen weights)
     model.load_state_dict(model_state)
     Ztr, Ptr = export_latents(model, DataLoader(tr, batch_size=cfg["batch_size"], shuffle=False), device)
     Zva, Pva = export_latents(model, DataLoader(va, batch_size=cfg["batch_size"], shuffle=False), device)

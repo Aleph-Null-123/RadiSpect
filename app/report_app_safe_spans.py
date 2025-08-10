@@ -14,7 +14,7 @@ st.set_page_config(page_title="RadiSpect — Safe Viewer (Report Click-to-Overla
 
 # --------- Paths ----------
 PAIRS = Path("data/pairs.csv")
-RUNS_DIR = Path("models/sae_final")
+RUNS_DIR = Path("models/sae-tuned")
 LABELS_PATH = Path("models/latent_labels.json")
 PASSLIST_PATH = Path("models/gate_pass_images.txt")
 GATE_EVAL_CSV = Path("models/gate_eval.csv")
@@ -25,7 +25,7 @@ CLICKMAP_PATH  = Path("models/clickable_map.json")
 @st.cache_data(show_spinner=False)
 def list_runs():
     if not RUNS_DIR.exists(): return []
-    return sorted([str(p) for p in RUNS_DIR.iterdir() if p.is_dir()])
+    return sorted([p for p in RUNS_DIR.iterdir() if p.is_dir()])
 
 @st.cache_data(show_spinner=False)
 def load_pairs():
@@ -195,7 +195,7 @@ if only_clickable:
 k_display = st.sidebar.slider("How many findings to show", 1, 6, 3)
 use_pct = st.sidebar.checkbox("Use percentile threshold for mask", value=True)
 thr = st.sidebar.slider("Fixed threshold", 0.05, 0.90, 0.30, 0.05, disabled=use_pct)
-pct = st.sidebar.slider("Percentile", 50, 99, 92, 1, disabled=not use_pct)
+pct = st.sidebar.slider("Percentile", 50, 99, 80, 1, disabled=not use_pct)
 prefer_labeled = st.sidebar.checkbox("Prefer labeled latents", value=True)
 
 # image chooser
