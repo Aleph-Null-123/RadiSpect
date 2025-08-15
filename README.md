@@ -3,7 +3,7 @@
 **On-device Conv-SAE for interpretable, privacy-safe radiology assistance.**  
 *Flags pathology-relevant regions, links them to report text, and surfaces misses—without cloud or colossal models.*
 
-Click below for video demo:
+Hackathon Project built in 36 hours. Click below for video demo:
 
 [![Watch the video](https://img.youtube.com/vi/Sold8_V2Mnw/maxresdefault.jpg)](https://www.youtube.com/watch?v=Sold8_V2Mnw)
 
